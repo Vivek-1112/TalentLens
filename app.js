@@ -264,6 +264,44 @@ function adminLoadData(data, filename, count) {
   showToast('success', '✅', count + ' candidates loaded · Recruiter portal updated automatically');
 }
 
+// ── Delete File ──────────────────────────────────────────
+function confirmDeleteFile() {
+  document.getElementById('confirmSubText').textContent =
+    'This will permanently remove all uploaded candidate data. This cannot be undone.';
+  document.getElementById('confirmDeleteBtn').textContent = '🗑️ Delete File';
+  document.getElementById('confirmDeleteBtn').onclick = () => adminDeleteFile();
+  openModal('confirmModal');
+}
+
+function adminDeleteFile() {
+  // Clear all data
+  masterData  = [];
+  recFiltered = [];
+
+  // Reset upload zone back to default state
+  document.getElementById('adminUploadSuccess').style.display = 'none';
+  document.getElementById('adminUploadDefault').style.display = 'block';
+  document.getElementById('adminUploadZone').classList.remove('has-data');
+
+  // Reset the file input so same file can be re-uploaded
+  const fileInput = document.getElementById('adminFileInput');
+  fileInput.value = '';
+
+  // Re-render admin table (will show empty state)
+  adminPage = 1;
+  adminRender();
+
+  // Sync recruiter — will show "no data" state
+  if (document.getElementById('recruiterPage').classList.contains('active')) {
+    recSyncFromAdmin();
+  }
+
+  closeModal('confirmModal');
+  // Reset confirm button text for future use
+  document.getElementById('confirmDeleteBtn').textContent = 'Delete';
+  showToast('info', '🗑️', 'File deleted · All candidate data cleared.');
+}
+
 /* ─────────────────────────────────────────
    ADMIN — Render Table
 ───────────────────────────────────────── */
