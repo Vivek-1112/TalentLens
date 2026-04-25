@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TalentLens — Candidate Intelligence Platform</title>
+
+  <!-- External Libraries -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Epilogue:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Project Stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ═══════════════ TOAST ═══════════════ -->
+<div class="toast" id="toast">
+  <span id="toastIcon"></span>
+  <span id="toastMsg"></span>
+</div>
+
+<!-- ═══════════════════════════════════════
+     LOGIN PAGE
+════════════════════════════════════════ -->
+<div id="loginPage" class="page active">
+  <div class="login-bg">
+    <div class="login-bg-orb"></div>
+    <div class="login-bg-orb"></div>
+    <div class="login-bg-orb"></div>
+  </div>
+  <div class="login-grid"></div>
+
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="login-logo-mark">🔍</div>
+      <div class="login-logo-text">Talent<span>Lens</span></div>
+    </div>
+    <div class="login-headline">Welcome back</div>
+    <div class="login-sub">Sign in to your Candidate Intelligence Platform</div>
+
+    <div class="user-type-row">
+      <button class="user-type-btn selected" id="btnAdmin" onclick="selectUserType('admin')">
+        <span class="utb-icon">🛡️</span>
+        <span class="utb-label">Admin</span>
+      </button>
+      <button class="user-type-btn" id="btnRecruiter" onclick="selectUserType('recruiter')">
+        <span class="utb-icon">🎯</span>
+        <span class="utb-label">Recruiter</span>
+      </button>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Username</label>
+      <input class="form-input" id="loginUsername" type="text" placeholder="Enter username" autocomplete="off">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Password</label>
+      <input class="form-input" id="loginPassword" type="password" placeholder="Enter password">
+    </div>
+
+    <div class="login-error" id="loginError">Invalid username or password. Please try again.</div>
+
+    <button class="btn-login" onclick="doLogin()">Sign In →</button>
+
+    <div class="login-hint">
+      <strong>Admin:</strong>
+      username <code style="color:var(--acc3);background:var(--s3);padding:1px 5px;border-radius:3px;font-size:11px">admin</code>
+      / password <code style="color:var(--acc3);background:var(--s3);padding:1px 5px;border-radius:3px;font-size:11px">admin123</code><br>
+      <strong>Recruiter:</strong>
+      username <code style="color:var(--acc5);background:var(--s3);padding:1px 5px;border-radius:3px;font-size:11px">recruiter</code>
+      / password <code style="color:var(--acc5);background:var(--s3);padding:1px 5px;border-radius:3px;font-size:11px">rec123</code>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     ADMIN PAGE
+════════════════════════════════════════ -->
+<div id="adminPage" class="page">
+
+  <!-- Topbar -->
+  <div class="topbar">
+    <div class="topbar-logo">
+      <div class="topbar-logo-mark">🔍</div>
+      Talent<span>Lens</span>
+    </div>
+    <div class="topbar-right">
+      <div class="topbar-user">
+        <div class="topbar-user-avatar">AD</div>
+        <div class="topbar-user-info">
+          <div class="topbar-user-name">Administrator</div>
+          <div class="topbar-user-role">Admin</div>
+        </div>
+      </div>
+      <button class="btn-logout" onclick="logout()">Sign Out</button>
+    </div>
+  </div>
+
+  <!-- Upload Zone -->
+  <div class="upload-zone" id="adminUploadZone"
+    onclick="document.getElementById('adminFileInput').click()"
+    ondragover="adminDragOver(event)"
+    ondragleave="adminDragLeave(event)"
+    ondrop="adminDrop(event)"
+    style="margin-bottom:0">
+    <div class="upload-zone-default" id="adminUploadDefault">
+      <div class="uz-icon">📊</div>
+      <div class="uz-title">Upload Candidate Excel / CSV</div>
+      <div class="uz-sub">Drag &amp; drop or click · Auto-detects your 16 column headers</div>
+    </div>
+    <div class="uz-success" id="adminUploadSuccess" style="display:none">
+      <div class="uz-success-left">
+        <span style="font-size:22px">✅</span>
+        <div>
+          <div class="uz-filename" id="adminFilename">data.xlsx</div>
+          <div class="uz-meta" id="adminMeta">0 loaded</div>
+        </div>
+      </div>
+      <button class="btn-secondary" onclick="event.stopPropagation(); document.getElementById('adminFileInput').click()">
+        📂 Change
+      </button>
+    </div>
+    <input type="file" id="adminFileInput" accept=".xlsx,.xls,.csv" onchange="adminFileSelect(event)">
+  </div>
+
+  <!-- Action Bar -->
+  <div class="admin-bar">
+    <div class="admin-bar-left">
+      <div class="admin-title">All Candidates</div>
+      <div class="admin-count" id="adminCount">0 entries</div>
+      <div class="admin-search-wrap">
+        <span class="admin-search-icon">🔍</span>
+        <input class="admin-search" id="adminSearch" type="text" placeholder="Search..." oninput="adminRender()">
+      </div>
+    </div>
+    <div class="admin-bar-right">
+      <button class="btn-secondary" onclick="adminExportCSV()">⬇ Export CSV</button>
+      <button class="btn-primary" onclick="openAddModal()">+ Add Candidate</button>
+    </div>
+  </div>
+
+  <!-- Table Container -->
+  <div style="flex:1;overflow:auto;display:flex;flex-direction:column;">
+    <div id="adminTableContainer" style="flex:1;overflow:auto;"></div>
+    <div class="admin-pagination" id="adminPagination" style="display:none">
+      <span id="adminPageInfo"></span>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <select
+          style="padding:5px 22px 5px 8px;border-radius:7px;border:1px solid var(--border);background:var(--s2);color:var(--text);font-size:12px;outline:none;appearance:none;background-image:url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' fill='%234a5568' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E&quot;);background-repeat:no-repeat;background-position:right 7px center;"
+          id="adminPerPage"
+          onchange="adminPage=1;adminRender()">
+          <option value="15">15/page</option>
+          <option value="25" selected>25/page</option>
+          <option value="50">50/page</option>
+        </select>
+        <div class="page-btns" id="adminPageBtns"></div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /adminPage -->
+
+<!-- ═══════════════════════════════════════
+     RECRUITER PAGE
+════════════════════════════════════════ -->
+<div id="recruiterPage" class="page">
+
+  <!-- Topbar -->
+  <div class="topbar">
+    <div class="topbar-logo">
+      <div class="topbar-logo-mark">🔍</div>
+      Talent<span>Lens</span>
+    </div>
+    <div class="topbar-right">
+      <div class="topbar-user">
+        <div class="topbar-user-avatar" style="background:linear-gradient(135deg,#06d6a0,#3d7eff)">RC</div>
+        <div class="topbar-user-info">
+          <div class="topbar-user-name">Recruiter</div>
+          <div class="topbar-user-role" style="color:var(--acc3)">Recruiter</div>
+        </div>
+      </div>
+      <button class="btn-logout" onclick="logout()">Sign Out</button>
+    </div>
+  </div>
+
+  <div class="r-body">
+
+    <!-- ── Priority Filter Sidebar ── -->
+    <aside class="r-sidebar">
+      <div class="r-sidebar-head">
+        <div class="r-sidebar-title">Priority Filters</div>
+      </div>
+
+      <!-- Priority 1 -->
+      <div class="priority-block" id="pb1">
+        <div class="priority-header">
+          <span class="priority-badge pb-1">🔴 Priority 1</span>
+          <button class="priority-clear" onclick="clearPriority(1)" id="pClear1" style="display:none">✕ Clear</button>
+        </div>
+        <div class="pf-field-select-wrap">
+          <select class="pf-select" id="pf1Field" onchange="onPriorityFieldChange(1)">
+            <option value="">— Select a filter field —</option>
+          </select>
+        </div>
+        <div id="pf1Value"></div>
+      </div>
+
+      <!-- Priority 2 -->
+      <div class="priority-block" id="pb2">
+        <div class="priority-header">
+          <span class="priority-badge pb-2">🟡 Priority 2</span>
+          <button class="priority-clear" onclick="clearPriority(2)" id="pClear2" style="display:none">✕ Clear</button>
+        </div>
+        <div class="pf-field-select-wrap">
+          <select class="pf-select" id="pf2Field" onchange="onPriorityFieldChange(2)">
+            <option value="">— Select a filter field —</option>
+          </select>
+        </div>
+        <div id="pf2Value"></div>
+      </div>
+
+      <!-- Priority 3 -->
+      <div class="priority-block" id="pb3">
+        <div class="priority-header">
+          <span class="priority-badge pb-3">🟢 Priority 3</span>
+          <button class="priority-clear" onclick="clearPriority(3)" id="pClear3" style="display:none">✕ Clear</button>
+        </div>
+        <div class="pf-field-select-wrap">
+          <select class="pf-select" id="pf3Field" onchange="onPriorityFieldChange(3)">
+            <option value="">— Select a filter field —</option>
+          </select>
+        </div>
+        <div id="pf3Value"></div>
+      </div>
+
+      <!-- Filter Chips Summary -->
+      <div class="filter-chips" id="filterChips" style="display:none"></div>
+
+      <!-- Sidebar Actions -->
+      <div class="r-sidebar-actions">
+        <button class="btn-apply-filters" onclick="applyPriorityFilters()">⚡ Apply Filters</button>
+        <button class="btn-reset-filters" onclick="resetPriorityFilters()">Reset All Filters</button>
+      </div>
+    </aside>
+
+    <!-- ── Recruiter Main Content ── -->
+    <div class="r-content">
+
+      <!-- Data Sync Status Bar (read-only — data comes from Admin) -->
+      <div class="rec-sync-bar" id="recSyncBar">
+        <div class="rec-sync-bar-inner">
+          <span class="rec-sync-icon" id="recSyncIcon">📋</span>
+          <div>
+            <div class="rec-sync-title" id="recSyncTitle">Waiting for Admin Data</div>
+            <div class="rec-sync-sub" id="recSyncSub">
+              Data is managed by the Administrator. Please ask your admin to upload the candidate file.
+            </div>
+          </div>
+        </div>
+        <div class="rec-sync-badge" id="recSyncBadge" style="display:none">
+          <span id="recSyncCount">0</span> candidates
+        </div>
+      </div>
+
+      <!-- KPI Strip -->
+      <div class="kpi-strip fade-up fu-1" id="recKpiStrip" style="display:none">
+        <div class="kpi-card">
+          <div class="kpi-label">Total Candidates</div>
+          <div class="kpi-val blue" id="rKpiTotal">0</div>
+          <div class="kpi-sub" id="rKpiFiltered">0 matching</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Avg. Experience</div>
+          <div class="kpi-val purple" id="rKpiExp">0</div>
+          <div class="kpi-sub">years average</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Industries</div>
+          <div class="kpi-val green" id="rKpiInd">0</div>
+          <div class="kpi-sub">unique industries</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Cities</div>
+          <div class="kpi-val gold" id="rKpiCities">0</div>
+          <div class="kpi-sub">unique cities</div>
+        </div>
+      </div>
+
+      <!-- Company-Wise Line Chart Section -->
+      <div id="recChartsSection" class="lc-section" style="display:none">
+
+        <!-- No-filter placeholder -->
+        <div class="lc-no-filter" id="lcNoFilter">
+          <div class="lc-no-filter-icon">📈</div>
+          <div class="lc-no-filter-title">Set Priority Filters to Generate Chart</div>
+          <div class="lc-no-filter-sub">
+            Select fields in Priority 1, 2, and/or 3 on the left panel, then click
+            <strong>Apply Filters</strong>. The line chart will show company-wise
+            candidate counts for each priority dimension.
+          </div>
+        </div>
+
+        <!-- Line Chart Card -->
+        <div class="lc-card" id="lcCard" style="display:none">
+          <div class="lc-header">
+            <div class="lc-header-left">
+              <div class="lc-eyebrow">Company-Wise Analysis</div>
+              <div class="lc-title" id="lcTitle">Candidate Count by Employer</div>
+              <div class="lc-subtitle" id="lcSubtitle">Filtered by applied priority dimensions</div>
+            </div>
+            <div class="lc-header-right">
+              <div class="lc-total-pill" id="lcTotalPill">—</div>
+            </div>
+          </div>
+          <div class="lc-legend-row" id="lcLegendRow"></div>
+          <div class="lc-chart-wrap">
+            <canvas id="rChartLine"></canvas>
+          </div>
+          <div class="lc-insights" id="lcInsights"></div>
+        </div>
+
+      </div><!-- /recChartsSection -->
+
+      <!-- Results Table -->
+      <div class="r-table-section fade-up fu-3" id="recTableSection">
+        <div class="r-table-header">
+          <div class="r-table-title">
+            Candidates
+            <span id="recTableCount" style="font-weight:400;font-size:11.5px;color:var(--muted)"></span>
+          </div>
+          <div class="r-table-controls">
+            <div class="r-search-wrap">
+              <span class="r-search-icon">🔍</span>
+              <input class="r-search" id="recSearch" type="text" placeholder="Search..." oninput="recRender()">
+            </div>
+            <select class="r-per-page" id="recPerPage" onchange="recPage=1;recRender()">
+              <option value="10">10/page</option>
+              <option value="25" selected>25/page</option>
+              <option value="50">50/page</option>
+            </select>
+            <button class="r-export-btn" onclick="recExportCSV()">⬇ Export</button>
+          </div>
+        </div>
+        <div class="col-toggle-strip" id="recColToggles"></div>
+        <div id="recTableBody">
+          <div class="empty-state">
+            <div class="empty-icon">📋</div>
+            <div class="empty-title">No Data Loaded</div>
+            <div class="empty-sub">
+              The Administrator has not uploaded any candidate data yet.<br>
+              Once the admin uploads a file, candidates will appear here automatically.
+            </div>
+          </div>
+        </div>
+        <div class="admin-pagination" id="recPagination" style="display:none">
+          <span id="recPageInfo"></span>
+          <div class="page-btns" id="recPageBtns"></div>
+        </div>
+      </div>
+
+    </div><!-- /r-content -->
+  </div><!-- /r-body -->
+</div><!-- /recruiterPage -->
+
+<!-- ═══════════════════════════════════════
+     ADD / EDIT CANDIDATE MODAL
+════════════════════════════════════════ -->
+<div class="modal-overlay" id="candidateModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modalTitle">Add Candidate</div>
+      <button class="modal-close" onclick="closeModal('candidateModal')">✕</button>
+    </div>
+    <div class="modal-grid">
+      <div class="modal-group full">
+        <div class="modal-label">Candidate Name</div>
+        <input class="modal-input" id="mCandidateName" placeholder="Full name">
+      </div>
+      <div class="modal-group full">
+        <div class="modal-label">LinkedIn Profile URL</div>
+        <input class="modal-input" id="mLinkedinProfile" placeholder="https://linkedin.com/in/...">
+      </div>
+      <div class="modal-group">
+        <div class="modal-label">Industry</div>
+        <input class="modal-input" id="mIndustry" placeholder="e.g. Technology">
+      </div>
+      <div class="modal-group">
+        <div class="modal-label">Gender</div>
+        <select class="modal-input" id="mGender">
+          <option value="">Select</option>
+          <option>Male</option>
+          <option>Female</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div class="modal-group">
+        <div class="modal-label">Current Employer</div>
+        <input class="modal-input" id="mCurrentEmployer" placeholder="Company name">
+      </div>
+      <div class="modal-group">
+        <div class="modal-label">Total Experience (Years)</div>
+        <input class="modal-input" id="mTotalExperience" type="number" min="0" placeholder="e.g. 8">
+      </div>
+      <div class="modal-group">
+        <div class="modal-label">Title</div>
+        <input class="modal-input" id="mTitle" placeholder="e.g. Vice President">
+      </div>
+      <div class="modal-group">
+        <div class="modal-label">Current Location</div>
+        <input class="modal-input" id="mCurrentLocation" placeholder="City, State">
+      </div>
+      <div class="modal-group">
+        <div class="modal-label">City</div>
+        <input class="modal-input" id="mCity" placeholder="City">
+      </div>
+      <div class="modal-group">
+        <div class="modal-label">State</div>
+        <input class="modal-input" id="mState" placeholder="State">
+      </div>
+      <div class="modal-group">
+        <div class="modal-label">Primary Vertical</div>
+        <input class="modal-input" id="mPrimaryVertical" placeholder="e.g. FinTech">
+      </div>
+      <div class="modal-group">
+        <div class="modal-label">Secondary Vertical</div>
+        <input class="modal-input" id="mSecondaryVertical" placeholder="e.g. Payments">
+      </div>
+      <div class="modal-group">
+        <div class="modal-label">Primary Horizontal</div>
+        <input class="modal-input" id="mPrimaryHorizontal" placeholder="e.g. Sales &amp; BD">
+      </div>
+      <div class="modal-group">
+        <div class="modal-label">Secondary Horizontal</div>
+        <input class="modal-input" id="mSecondaryHorizontal" placeholder="e.g. Key Accounts">
+      </div>
+      <div class="modal-group">
+        <div class="modal-label">Role</div>
+        <input class="modal-input" id="mRole" placeholder="e.g. People Manager">
+      </div>
+      <div class="modal-group">
+        <div class="modal-label">Role Focus</div>
+        <input class="modal-input" id="mRoleFocus" placeholder="e.g. Revenue Generation">
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('candidateModal')">Cancel</button>
+      <button class="btn-primary" id="modalSaveBtn" onclick="saveCandidate()">Save Candidate</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM DELETE MODAL -->
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal confirm-modal">
+    <div class="confirm-icon">🗑️</div>
+    <div class="confirm-title">Delete Candidate?</div>
+    <div class="confirm-sub" id="confirmSubText">This action cannot be undone.</div>
+    <div class="confirm-actions">
+      <button class="btn-secondary" onclick="closeModal('confirmModal')">Cancel</button>
+      <button class="btn-confirm-del" id="confirmDeleteBtn">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- Project JavaScript -->
+<script src="app.js"></script>
+
+</body>
+</html>
