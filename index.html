@@ -118,9 +118,14 @@
           <div class="uz-meta" id="adminMeta">0 loaded</div>
         </div>
       </div>
-      <button class="btn-secondary" onclick="event.stopPropagation(); document.getElementById('adminFileInput').click()">
-        📂 Change
-      </button>
+      <div class="uz-actions">
+        <button class="btn-secondary" onclick="event.stopPropagation(); document.getElementById('adminFileInput').click()">
+          📂 Change File
+        </button>
+        <button class="btn-delete-file" onclick="event.stopPropagation(); confirmDeleteFile()">
+          🗑️ Delete File
+        </button>
+      </div>
     </div>
     <input type="file" id="adminFileInput" accept=".xlsx,.xls,.csv" onchange="adminFileSelect(event)">
   </div>
