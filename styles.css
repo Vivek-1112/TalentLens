@@ -417,7 +417,28 @@ select.modal-input option { background: #1c2230; }
 .uz-success-left { display: flex; align-items: center; gap: 10px; }
 .uz-filename { font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700; }
 .uz-meta { font-size: 11.5px; color: var(--dim); }
-#adminFileInput { display: none; }
+.uz-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.btn-delete-file {
+  padding: 8px 16px;
+  border-radius: var(--r);
+  border: 1px solid rgba(247, 37, 133, 0.35);
+  background: rgba(247, 37, 133, 0.08);
+  color: var(--acc4);
+  font-size: 12.5px;
+  font-family: 'Epilogue', sans-serif;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.btn-delete-file:hover {
+  background: rgba(247, 37, 133, 0.18);
+  border-color: var(--acc4);
+  transform: translateY(-1px);
+}
 
 /* Tags */
 .tag { font-size: 10px; padding: 2px 8px; border-radius: 4px; display: inline-block; white-space: nowrap; }
